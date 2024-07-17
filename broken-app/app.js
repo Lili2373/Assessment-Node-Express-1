@@ -7,12 +7,24 @@ app.use(express.json());
 app.post('/', async (req, res) => {
   try {
     const { developers } = req.body;
+    if (!developers || !Array.isArray(developers)) {
+      return res.status(400).json({ error: 'Invalid request body' });
+    }
+
     const promises = developers.map(async (username) => {
-      const { data } = await axios.get(`https://api.github.com/users/${username}`);
-      return {
-        name: data.name,
-        bio: data.bio
-      };
+      try {
+        const { data } = await axios.get(`https://api.github.com/users/${username}`);
+        return {
+          name: data.name || 'N/A',
+          bio: data.bio || 'N/A'
+        };
+      } catch (error) {
+        console.error(`Error fetching data for ${username}:`, error.message);
+        return {
+          name: 'N/A',
+          bio: 'N/A'
+        };
+      }
     });
 
     const developersInfo = await Promise.all(promises);
